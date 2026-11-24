@@ -25,25 +25,96 @@ def get_page(url: str, retries: int = 2) -> str:
             time.sleep(2 ** attempt)
     raise RuntimeError(f"Unable to fetch {url}: {last}")
 
-def discover_latest_draw() -> int:
-    html = get_page(LISTING_URL)
-    soup = BeautifulSoup(html, "html.parser")
-    candidates = []
-    for a in soup.find_all("a", href=True):
-        href = a["href"]
-        if re.search(r"/results/govisetha/\d+", href, re.I):
-            m = re.search(r"/results/govisetha/(\d+)", href, re.I)
-            if m:
-                candidates.append(int(m.group(1)))
-    if not candidates:
-        # Fallback: listing markup may show the draw number as nearby text.
-        text = soup.get_text(" ", strip=True)
-        m = re.search(r"Govisetha\s+(\d{3,})", text, re.I)
-        if m:
-            candidates.append(int(m.group(1)))
-    if not candidates:
-        raise RuntimeError("Could not discover the latest Govisetha draw from NLB /pit/. NLB page structure may have changed.")
-    return max(candidates)
+def discover_latest_draw():
+    import re
+    import requests
+    from bs4 import BeautifulSoup
+
+    urls = [
+        "https://www.nlb.lk/pit/",
+        "https://r.nlb.lk/pit/",
+        "https://www.nlb.lk/English/results/govisetha",
+        "https://r.nlb.lk/English/results/govisetha"
+    ]
+
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept": "text/html,application/xhtml+xml"
+    }
+
+    for url in urls:
+        try:
+            print(f"Checking source: {url}")
+
+            response = requests.get(
+                url,
+                headers=headers,
+                timeout=(5, 10)
+            )
+
+            print(f"HTTP Status: {response.status_code}")
+            print(f"Response size: {len(response.content)}")
+
+            response.raise_for_status()
+
+            soup = BeautifulSoup(
+                response.text,
+                "html.parser"
+            )
+
+            candidates = []
+
+            # Method 1: Official result links
+            for tag in soup.find_all("a", href=True):
+                match = re.search(
+                    r"/results/govisetha/(\d+)",
+                    tag["href"],
+                    re.IGNORECASE
+                )
+
+                if match:
+                    candidates.append(int(match.group(1)))
+
+            # Method 2: Visible result listing
+            text = soup.get_text(" ", strip=True)
+
+            matches = re.findall(
+                r"\bGovisetha\s*[:#-]?\s*(\d{3,6})\b",
+                text,
+                re.IGNORECASE
+            )
+
+            candidates.extend(int(x) for x in matches)
+
+            # Method 3: Individual Govisetha page
+            if "/results/govisetha" in url.lower():
+                match = re.search(
+                    r"Draw\s*No\.?\s*:\s*(\d+)",
+                    text,
+                    re.IGNORECASE
+                )
+
+                if match:
+                    candidates.append(int(match.group(1)))
+
+            if candidates:
+                latest = max(candidates)
+                print(f"Latest candidate draw: {latest}")
+                return latest
+
+            print("No Govisetha draw found.")
+            print(f"Page title: {soup.title}")
+            print(f"Page preview: {text[:300]}")
+
+        except Exception as error:
+            print(f"Source failed: {url}")
+            print(f"Error: {error}")
+
+    raise RuntimeError(
+        "All official NLB discovery sources failed."
+    )
+
 
 def parse_draw(draw_no: int):
     url = f"{BASE}/results/govisetha/{draw_no}"
