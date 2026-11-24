@@ -1,1 +1,7 @@
-# govisetha-analyzer
+# Govisetha Analyzer V2 (database-free)
+
+Upload the contents of this directory to a new public GitHub repository, branch main. Include the hidden .github directory. In Settings > Pages > Build and deployment, select GitHub Actions. In Actions, open Collect and publish Govisetha and Run workflow. First run uses 30 pages; use 100 for a larger bounded backfill. It runs twice daily thereafter. No secrets, database, or paid API required. Check NLB access terms before enabling collection. The official live HTML could not be verified in the development environment; inspect the first workflow logs and compare results to NLB before relying on them. No genuine records are bundled.
+
+The browser fetches data/govisetha.json from its own host (a static JSON endpoint, not an NLB API). It analyzes locally without external libraries. A successful snapshot is cached in browser storage when available. A failed collector preserves the existing snapshot and logs failures. The first push publishes the empty dashboard; the manual or scheduled job collects data. Scheduled runs can be delayed or disabled by GitHub. Historical backfill progresses in batches, but unavailable draws may need manual investigation. Gap analysis counts loaded draws, not missing records. Demo data and manual CSV imports are explicitly identified and are never written to the official JSON. Past frequencies are not predictions.
+
+Local preview: from project root run `python -m http.server 8000 --directory site` and open http://localhost:8000. To run collection locally, install requirements then run `python -m collector.main --batch 30`.

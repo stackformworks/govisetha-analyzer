@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Govisetha Lottery Analyzer</title>
+<style>
+:root{--bg:#f4f6fb;--panel:#fff;--ink:#172033;--muted:#697386;--line:#e5e9f2;--brand:#3157d5;--brand2:#203fa9;--green:#16845b;--amber:#a86708;--shadow:0 12px 35px rgba(24,39,75,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,Segoe UI,Arial,sans-serif}
+header{background:linear-gradient(120deg,#172b66,#3157d5);color:#fff;padding:28px max(20px,calc((100% - 1180px)/2))}
+header .tag{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;opacity:.8}h1{font-size:clamp(25px,4vw,36px);margin:5px 0}header p{margin:0;color:#dce5ff;max-width:700px}
+main{max-width:1180px;margin:24px auto;padding:0 18px 50px}.notice{background:#fff8e8;border:1px solid #f3dfb3;color:#76500f;padding:13px 16px;border-radius:12px;margin-bottom:18px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0}.btn{border:0;border-radius:9px;padding:10px 15px;background:var(--brand);color:white;font-weight:650;cursor:pointer}.btn:hover{background:var(--brand2)}.btn.secondary{background:#e9edfb;color:#2746ad}.btn.ghost{background:#fff;color:#34405a;border:1px solid var(--line)}input,select{font:inherit;border:1px solid #d9deea;border-radius:8px;padding:10px;background:#fff;color:var(--ink)}input[type=file]{max-width:100%}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:17px;box-shadow:var(--shadow)}.metric small{color:var(--muted);display:block}.metric strong{font-size:27px;display:block;margin-top:4px}.section{margin-top:22px}.section h2{font-size:19px;margin:0 0 12px}.two{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}.tablewrap{overflow:auto;max-height:390px;border:1px solid var(--line);border-radius:10px}table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}th{position:sticky;top:0;background:#f7f8fc;color:#59647a;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.bars{display:grid;gap:9px}.barrow{display:grid;grid-template-columns:42px 1fr 38px;gap:9px;align-items:center;font-size:13px}.track{height:10px;background:#edf0f7;border-radius:99px;overflow:hidden}.fill{height:100%;background:linear-gradient(90deg,#5877e6,#8da3ff);border-radius:99px}.muted{color:var(--muted)}.pill{display:inline-block;background:#eef2ff;color:#2c4bb8;padding:4px 9px;border-radius:99px;font-size:12px;margin:3px}.empty{padding:24px;text-align:center;color:var(--muted)}.controls{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.controls label{font-size:13px;color:var(--muted)}.footer{color:var(--muted);font-size:12px;margin-top:22px}.results{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.combo{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fbfcff}.balls{display:flex;gap:6px;align-items:center;margin:8px 0}.ball{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#eaf0ff;color:#2346b5;font-weight:750}.letter{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#e9f7f0;color:#14744f;font-weight:800}.small{font-size:12px;color:var(--muted)}
+@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.results{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.grid{grid-template-columns:1fr 1fr;gap:8px}.card{padding:13px}.metric strong{font-size:22px}.results{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="tag">Browser-based statistical research</div><h1>Govisetha Lottery Analyzer</h1><p>Explore historical draw results with frequency, position, pair and gap analysis — using your own verified data.</p></header>
+<main>
+<div class="notice"><b>Important:</b> This tool describes past results only. It cannot predict or guarantee future winning numbers. Lottery draws are intended to be random.</div>
+<div class="card">
+  <h2 style="margin:0 0 8px">1. Official results and optional import</h2>
+  <p class="muted" style="margin:0 0 12px">Upload a CSV file with columns: <code>date,draw_no,letter,n1,n2,n3,n4</code>. Dates and draw numbers are optional. Numbers must be between 1 and 80; letter must be A–Z.</p>
+  <div class="toolbar">
+    <input type="file" id="file" accept=".csv,text/csv">
+    <button class="btn" id="refresh">Refresh official data</button><button class="btn secondary" id="loadSample">Load demo data</button>
+    <button class="btn secondary" id="downloadTemplate">Download CSV template</button>
+    <button class="btn ghost" id="clear">Clear data</button>
+  </div>
+  <div id="status" class="small">Loading last published official results...</div>
+</div>
+<div class="section grid">
+  <div class="card metric"><small>Draws analyzed</small><strong id="drawCount">0</strong></div>
+  <div class="card metric"><small>Unique numbers seen</small><strong id="uniqueCount">0/80</strong></div>
+  <div class="card metric"><small>Most frequent number</small><strong id="hotNumber">—</strong></div>
+  <div class="card metric"><small>Most frequent letter</small><strong id="hotLetter">—</strong></div>
+</div>
+<div class="section two">
+  <div class="card"><h2>2. Number frequency</h2><p class="muted small">Count of appearances across all four number positions.</p><div id="numberBars" class="bars"><div class="empty">Load data to view number frequencies.</div></div></div>
+  <div class="card"><h2>3. Letter frequency</h2><p class="muted small">Observed letter counts in the uploaded history.</p><div id="letterBars" class="bars"><div class="empty">Load data to view letter frequencies.</div></div></div>
+</div>
+<div class="section two">
+  <div class="card"><h2>4. Position analysis</h2><p class="muted small">Frequency by number position (N1–N4).</p><div id="positionTables" class="empty">Load data to view position analysis.</div></div>
+  <div class="card"><h2>5. Most common pairs</h2><p class="muted small">Pairs that appeared together in the same draw. Descriptive only.</p><div id="pairTable" class="empty">Load data to view pair analysis.</div></div>
+</div>
+<div class="section two">
+  <div class="card"><h2>6. Gap analysis</h2><p class="muted small">Draws since each number last appeared. “Gap” is not a prediction.</p><div id="gapTable" class="empty">Load data to view gap analysis.</div></div>
+  <div class="card"><h2>7. Data quality</h2><div id="quality" class="empty">Import data to validate rows.</div></div>
+</div>
+<div class="section card">
+  <h2>8. Uploaded draw history</h2>
+  <div class="controls" style="margin:10px 0"><label for="search">Search</label><input id="search" placeholder="Draw number, date, letter or number" style="min-width:220px"><span class="small" id="rowCount"></span></div>
+  <div class="tablewrap"><table><thead><tr><th>Date</th><th>Draw No.</th><th>Letter</th><th>N1</th><th>N2</th><th>N3</th><th>N4</th></tr></thead><tbody id="history"><tr><td colspan="7" class="empty">No data loaded.</td></tr></tbody></table></div>
+</div>
+<div class="section card">
+  <h2>9. Random combination simulator</h2>
+  <p class="muted small">Generates random example combinations for testing the format. These are not predictions and have no improved chance of winning.</p>
+  <div class="controls"><label>How many examples?</label><select id="comboCount"><option>3</option><option>5</option><option>10</option></select><button class="btn" id="generate">Generate examples</button></div>
+  <div id="combinations" class="results" style="margin-top:14px"></div>
+</div>
+<div class="footer">Analytics runs locally in your browser. Official results are published as static JSON. Your CSV is not uploaded to a server. This tool does not access or represent NLB's internal draw system.</div>
+</main>
+<script>
+let draws=[];
+const $=id=>document.getElementById(id);
+function parseCSV(text){
+ const lines=text.replace(/^\uFEFF/,'').trim().split(/\r?\n/).filter(Boolean);
+ if(lines.length<2) throw Error('CSV must contain a header and at least one data row.');
+ const split=line=>{let out=[],cur='',q=false;for(let i=0;i<line.length;i++){let c=line[i];if(c==='"'&&line[i+1]==='"'&&q){cur+='"';i++;}else if(c==='"')q=!q;else if(c===','&&!q){out.push(cur.trim());cur='';}else cur+=c;}out.push(cur.trim());return out;};
+ const headers=split(lines[0]).map(x=>x.toLowerCase().replace(/[^a-z0-9_]/g,''));
+ const aliases={date:['date','drawdate'],draw_no:['draw_no','drawno','drawnumber','draw'],letter:['letter','alphabet'],n1:['n1','number1','no1'],n2:['n2','number2','no2'],n3:['n3','number3','no3'],n4:['n4','number4','no4']};
+ const idx={};for(const k in aliases)idx[k]=headers.findIndex(h=>aliases[k].includes(h));
+ for(const k of ['letter','n1','n2','n3','n4'])if(idx[k]<0)throw Error('Missing required column: '+k+'. Use the provided CSV template.');
+ const rows=[],errors=[];
+ lines.slice(1).forEach((line,i)=>{const c=split(line);const r={date:idx.date>=0?c[idx.date]||'': '',draw_no:idx.draw_no>=0?c[idx.draw_no]||'':String(i+1),letter:(c[idx.letter]||'').toUpperCase(),nums:['n1','n2','n3','n4'].map(k=>Number(c[idx[k]]))};
+ if(!/^[A-Z]$/.test(r.letter)||r.nums.some(n=>!Number.isInteger(n)||n<1||n>80)){errors.push('Row '+(i+2)+': invalid letter or number');return;}rows.push(r);});
+ if(!rows.length)throw Error('No valid rows found. '+errors.slice(0,3).join('; '));
+ return {rows,errors};
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function barHTML(items,max){return items.map(([k,v])=>`<div class="barrow"><b>${esc(k)}</b><div class="track"><div class="fill" style="width:${max?100*v/max:0}%"></div></div><span>${v}</span></div>`).join('');}
+function tableHTML(headers,rows){return `<div class="tablewrap"><table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(x=>`<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;}
+function analyze(){
+ if(!draws.length)return;
+ const all=draws.flatMap(d=>d.nums),freq=Array(81).fill(0),letters={},pos=Array.from({length:4},()=>Array(81).fill(0)),last=Array(81).fill(-1),pairs={};
+ draws.forEach((d,i)=>{letters[d.letter]=(letters[d.letter]||0)+1;d.nums.forEach((n,j)=>{freq[n]++;pos[j][n]++;last[n]=i;});const unique=[...new Set(d.nums)].sort((a,b)=>a-b);for(let a=0;a<unique.length;a++)for(let b=a+1;b<unique.length;b++){const k=unique[a]+'-'+unique[b];pairs[k]=(pairs[k]||0)+1;}});
+ const nums=Array.from({length:80},(_,i)=>i+1),sorted=nums.map(n=>[n,freq[n]]).sort((a,b)=>b[1]-a[1]||a[0]-b[0]),lettersSorted=Object.entries(letters).sort((a,b)=>b[1]-a[1]);
+ $('drawCount').textContent=draws.length;$('uniqueCount').textContent=nums.filter(n=>freq[n]>0).length+'/80';$('hotNumber').textContent=sorted[0][1]?String(sorted[0][0]).padStart(2,'0')+' ('+sorted[0][1]+')':'—';$('hotLetter').textContent=lettersSorted[0]?lettersSorted[0][0]+' ('+lettersSorted[0][1]+')':'—';
+ const topNums=sorted.slice(0,15);$('numberBars').innerHTML=barHTML(topNums,topNums[0][1]);$('letterBars').innerHTML=barHTML(lettersSorted,lettersSorted[0]?.[1]||0);
+ $('positionTables').innerHTML=tableHTML(['Position','Most frequent','Count'],pos.map((p,i)=>{let top=nums.map(n=>[n,p[n]]).sort((a,b)=>b[1]-a[1])[0];return ['N'+(i+1),String(top[0]).padStart(2,'0'),top[1]];}));
+ $('pairTable').innerHTML=tableHTML(['Pair','Draw count'],Object.entries(pairs).sort((a,b)=>b[1]-a[1]).slice(0,12).map(x=>x));
+ $('gapTable').innerHTML=tableHTML(['Number','Last seen','Current gap'],nums.map(n=>[String(n).padStart(2,'0'),last[n]<0?'Never':`Draw ${last[n]+1}`,last[n]<0?draws.length:draws.length-1-last[n]]).sort((a,b)=>b[2]-a[2]).slice(0,15));
+ $('quality').innerHTML=`<p><b>${draws.length}</b> valid draw rows loaded.</p><p><b>${draws.length*4}</b> number entries checked.</p><p><b>${Object.keys(letters).length}</b> different letters found.</p><p class="small">Repeated numbers within a draw are retained as supplied. Verify source results before interpreting the analysis.</p>`;
+ renderHistory();
+}
+function renderHistory(){const q=$('search').value.toLowerCase();const rows=draws.filter(d=>[d.date,d.draw_no,d.letter,...d.nums].join(' ').toLowerCase().includes(q));$('rowCount').textContent=rows.length+' of '+draws.length+' rows';$('history').innerHTML=rows.slice().reverse().map(d=>`<tr><td>${esc(d.date)}</td><td>${esc(d.draw_no)}</td><td><b>${esc(d.letter)}</b></td>${d.nums.map(n=>`<td>${String(n).padStart(2,'0')}</td>`).join('')}</tr>`).join('')||'<tr><td colspan="7" class="empty">No matching rows.</td></tr>';}
+$('file').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const result=parseCSV(await f.text());draws=result.rows.sort((a,b)=>Number(a.draw_no)-Number(b.draw_no));analyze();$('status').textContent=`Loaded ${draws.length} valid rows from ${f.name}. ${result.errors.length} invalid rows skipped.`+(result.errors.length?' First issue: '+result.errors[0]:'');}catch(err){$('status').textContent='Import error: '+err.message;}});
+$('loadSample').onclick=()=>{draws=Array.from({length:30},(_,i)=>({date:'Demo',draw_no:String(1001+i),letter:'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random()*26)],nums:Array.from({length:4},()=>1+Math.floor(Math.random()*80))}));analyze();$('status').textContent='Loaded 30 randomly generated DEMO rows. These are not real Govisetha results.';};
+$('clear').onclick=()=>{draws=[];$('file').value='';$('status').textContent='Data cleared.';['drawCount','uniqueCount','hotNumber','hotLetter'].forEach((id,i)=>$(id).textContent=['0','0/80','—','—'][i]);['numberBars','letterBars','positionTables','pairTable','gapTable','quality'].forEach(id=>$(id).innerHTML='<div class="empty">Load data to view analysis.</div>');$('history').innerHTML='<tr><td colspan="7" class="empty">No data loaded.</td></tr>';$('rowCount').textContent='';};
+$('search').addEventListener('input',renderHistory);
+$('downloadTemplate').onclick=()=>{const blob=new Blob(['date,draw_no,letter,n1,n2,n3,n4\n2026-01-01,1001,A,12,24,36,48\n'],{type:'text/csv'});download(blob,'govisetha_template.csv');};
+function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href);}
+$('generate').onclick=()=>{const count=Number($('comboCount').value);$('combinations').innerHTML=Array.from({length:count},()=>{const a=Array.from({length:4},()=>1+Math.floor(Math.random()*80));return {a,letter:'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random()*26)]};}).map((x,i)=>`<div class="combo"><span class="small">Random example ${i+1}</span><div class="balls">${x.a.map(n=>`<span class="ball">${String(n).padStart(2,'0')}</span>`).join('')}<span class="letter">${x.letter}</span></div><span class="small">Randomly generated · not a prediction</span></div>`).join('');};
+
+async function loadOfficial(){
+ const status=$('status'); const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),8000);
+ status.textContent='Refreshing published NLB data...';
+ try {
+  const res=await fetch('data/govisetha.json',{cache:'no-cache',signal:controller.signal});
+  if(!res.ok)throw Error('HTTP '+res.status);
+  const payload=await res.json();
+  if(!Array.isArray(payload.draws)||payload.source!=='NLB')throw Error('Invalid dataset');
+  const valid=payload.draws.every(r=>Number.isInteger(r.draw_no)&&/^[A-Z]$/.test(r.letter)&&[r.n1,r.n2,r.n3,r.n4].every(n=>Number.isInteger(n)&&n>=1&&n<=80));
+  if(!valid)throw Error('Invalid result row');
+  if(!payload.draws.length){status.textContent='No verified official data published yet. Run the GitHub collection workflow first.';return;}
+  draws=payload.draws.map(r=>({date:r.draw_date,draw_no:String(r.draw_no),letter:r.letter,nums:[r.n1,r.n2,r.n3,r.n4]})).sort((a,b)=>Number(a.draw_no)-Number(b.draw_no));
+  analyze(); status.textContent='Official NLB snapshot: '+draws.length+' draws | last successful check: '+(payload.checked_at||'unknown')+' | latest draw: '+draws.at(-1).date;
+  try{localStorage.setItem('govisetha_snapshot',JSON.stringify(payload));}catch(e){}
+ }catch(e){status.textContent='Refresh failed: '+e.message+'. Current displayed data is unchanged.';if(!draws.length){try{const p=JSON.parse(localStorage.getItem('govisetha_snapshot'));if(p?.draws?.length){draws=p.draws.map(r=>({date:r.draw_date,draw_no:String(r.draw_no),letter:r.letter,nums:[r.n1,r.n2,r.n3,r.n4]})).sort((a,b)=>Number(a.draw_no)-Number(b.draw_no));analyze();status.textContent='Offline cached official snapshot | last successful check: '+p.checked_at;}}catch(e){}}}
+ finally{clearTimeout(timer);}
+}
+$('refresh').onclick=loadOfficial;
+loadOfficial();
+
+</script>
+</body>
+</html>
